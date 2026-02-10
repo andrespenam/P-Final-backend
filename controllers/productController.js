@@ -1,42 +1,40 @@
 import pool from "../config/db.js";
 
-// GET ALL PRODUCTS (PÚBLICO)
 export const getAllProducts = async (req, res) => {
-    try {
-        const result = await pool.query(
-            "SELECT * FROM products ORDER BY id ASC"
-        );
-        res.json(result.rows);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Error al obtener productos" });
-    }
+  try {
+    const result = await pool.query(
+      "SELECT * FROM products ORDER BY created_at DESC"
+    );
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ message: "Error obteniendo productos" });
+  }
 };
 
-// CREATE PRODUCT (PROTEGIDO)
+export const getFeaturedProducts = async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM products WHERE featured = true ORDER BY created_at DESC"
+    );
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ message: "Error obteniendo productos destacados" });
+  }
+};
+
 export const createProduct = async (req, res) => {
-    try {
-        const { name, description, price, image, category } = req.body || {};
+  try {
+    const { name, description, price, image, category, featured } = req.body;
 
-        if (!name || !price) {
-            if (!name || !price) return res.status(400).json({ message: "Datos incompletos" });
-        }
-
-        const newProduct = await pool.query(
-            `INSERT INTO products (name, description, price, image, category)
-       VALUES ($1, $2, $3, $4, $5)
+    const result = await pool.query(
+      `INSERT INTO products (name, description, price, image, category, featured)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-            [name, description, price, image, category]
-        );
+      [name, description, price, image, category, featured ?? false]
+    );
 
-        res.status(201).json(newProduct.rows[0]);
-    } catch (error) {
-        console.error("PG ERROR:", error.message);
-        console.error("DETAIL:", error.detail);
-        console.error("CODE:", error.code);
-        res.status(500).json({ message: error.message, detail: error.detail, code: error.code });
-    }
-    //console.error(error);
-    //res.status(500).json({ message: "Error al crear producto" });
-}
-;
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ message: "Error creando producto" });
+  }
+};
